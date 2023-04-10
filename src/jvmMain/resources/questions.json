@@ -1,0 +1,22 @@
+{
+  "questions": [
+    {
+      "name": "What is the most abundant gas in the Earth's atmosphere?",
+      "answers": [
+        {"name": "Nitrogen", "isCorrect": true},
+        {"name": "Oxygen", "isCorrect": false},
+        {"name": "Carbon Dioxide", "isCorrect": false},
+        {"name": "Methane", "isCorrect": false}
+      ]
+    },
+    {
+      "name": "What is the largest organ in the human body?",
+      "answers": [
+        {"name": "Liver", "isCorrect": false},
+        {"name": "Heart", "isCorrect": false},
+        {"name": "Skin", "isCorrect": true},
+        {"name": "Lungs", "isCorrect": false}
+      ]
+    }
+  ]
+}
