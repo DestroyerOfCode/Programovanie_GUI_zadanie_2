@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import quiz.GameboardViewModel.Companion.QUESTIONS
 
@@ -31,7 +32,20 @@ class GameboardView(private val gameboardViewModel: GameboardViewModel = Gameboa
         val question = gameboardViewModel.quiz.value.questions[questionIndex.value]
         Column(modifier = Modifier.fillMaxHeight()) {
             Column {
-                quizComposable(questionIndex, question, selectedButton)
+                quizComposable(questionIndex, question) {
+                    question.answers.forEachIndexed { index, answer ->
+                        answerComposable(
+                            answer,
+                            { if (selectedButton.value == index) Color.Blue else Color.Black },
+                            {
+                                RadioButton(
+                                    selected = index == selectedButton.value,
+                                    modifier = Modifier.padding(start = Dp(50f)),
+                                    onClick = { selectedButton.value = index })
+                            }
+                        )
+                    }
+                }
             }
             answerButton(questionIndex, question, selectedButton)
         }
@@ -40,31 +54,26 @@ class GameboardView(private val gameboardViewModel: GameboardViewModel = Gameboa
     private fun quizComposable(
         questionIndex: MutableState<Int>,
         question: Question,
-        selectedButton: MutableState<Int>
+        composeAnswer: @Composable () -> Unit
     ) {
         Text(
             text = "Question ${questionIndex.value + 1}/$QUESTIONS: ${question.name}",
             modifier = Modifier.padding(start = Dp(50f), top = Dp(50f), bottom = Dp(20f))
         )
-        question.answers.forEachIndexed { index, answer ->
-            answerComposable(index, selectedButton, answer)
-        }
+        composeAnswer()
     }
     @Composable
     private fun answerComposable(
-        index: Int,
-        selectedButton: MutableState<Int>,
-        answer: Answer
+        answer: Answer,
+        color: () -> Color,
+        radioButton: @Composable () -> Unit
     ) {
         Row {
-            RadioButton(
-                selected = index == selectedButton.value,
-                modifier = Modifier.padding(start = Dp(50f)),
-                onClick = { selectedButton.value = index })
+            radioButton()
             Text(
                 text = answer.name,
                 modifier = Modifier.padding(top = Dp(12f)),
-                color = if (selectedButton.value == index) Color.Blue else Color.Black
+                color = color()
             )
         }
     }
@@ -83,24 +92,47 @@ class GameboardView(private val gameboardViewModel: GameboardViewModel = Gameboa
                 if (question.answers[selectedButton.value].isCorrect) {
                     gameboardViewModel.quiz.value.score++
                 }
+                gameboardViewModel.addAnswer(selectedButton.value)
                 selectedButton.value = -1
                 questionIndex.value++
             },
             enabled = selectedButton.value != -1,
             modifier = Modifier.padding(start = Dp(65f))
         ) {
-            Text(text = "answer")
+            Text(text = "answer", textAlign = TextAlign.Center)
         }
     }
     @Composable
     private fun endGame(questionIndex: MutableState<Int>) {
         Column {
-            Text(text = "Congratulations. You scored ${gameboardViewModel.quiz.value.score} out of $QUESTIONS")
-            Button(onClick = {
-                questionIndex.value = 0
-                gameboardViewModel.quiz.value.score = 0
-            }) {
-                Text(text = "Do you want to play again?")
+            Text(
+                text = "Congratulations. You scored ${gameboardViewModel.quiz.value.score} out of $QUESTIONS",
+                textAlign = TextAlign.Center
+            )
+            gameboardViewModel.quiz.value.questions.forEachIndexed { index, question ->
+                quizComposable(
+                    mutableStateOf(index),
+                    question
+                ) {
+                    question.answers.forEachIndexed { indexAnswer, answer ->
+                        answerComposable(answer, { if (answer.isCorrect) Color.Green else Color.Red }, {
+                            RadioButton(
+                                selected = indexAnswer == gameboardViewModel.selectedAnswersIndex[index],
+                                modifier = Modifier.padding(start = Dp(50f)),
+                                enabled = false,
+                                onClick = {})
+                        })
+                    }
+                }
+            }
+            Button(
+                onClick = {
+                    questionIndex.value = 0
+                    gameboardViewModel.quiz.value.score = 0
+                    gameboardViewModel.nullifyAnswers()
+                },
+            ) {
+                Text(text = "Do you want to play again?", textAlign = TextAlign.Center)
             }
         }
     }
