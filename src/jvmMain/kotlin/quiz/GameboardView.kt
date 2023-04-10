@@ -4,6 +4,7 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Text
@@ -13,7 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion
+import androidx.compose.ui.unit.Dp
 import quiz.GameboardViewModel.Companion.QUESTIONS
 
 class GameboardView(private val gameboardViewModel: GameboardViewModel = GameboardViewModel()) {
@@ -27,42 +28,66 @@ class GameboardView(private val gameboardViewModel: GameboardViewModel = Gameboa
             endGame(questionIndex)
             return
         }
-
         val question = gameboardViewModel.quiz.value.questions[questionIndex.value]
         Column(modifier = Modifier.fillMaxHeight()) {
             Column {
-                Text(text = question.name)
-                question.answers.forEachIndexed { index, answer ->
-                    Row {
-                        RadioButton(
-                            selected = index == selectedButton.value,
-                            onClick = { selectedButton.value = index })
-                        Text(text = answer.name, color = if (selectedButton.value == index) Color.Green else Color.Black )
-                    }
-                }
+                quizComposable(questionIndex, question, selectedButton)
             }
             answerButton(questionIndex, question, selectedButton)
         }
     }
-
+    @Composable
+    private fun quizComposable(
+        questionIndex: MutableState<Int>,
+        question: Question,
+        selectedButton: MutableState<Int>
+    ) {
+        Text(
+            text = "Question ${questionIndex.value + 1}/$QUESTIONS: ${question.name}",
+            modifier = Modifier.padding(start = Dp(50f), top = Dp(50f), bottom = Dp(20f))
+        )
+        question.answers.forEachIndexed { index, answer ->
+            answerComposable(index, selectedButton, answer)
+        }
+    }
+    @Composable
+    private fun answerComposable(
+        index: Int,
+        selectedButton: MutableState<Int>,
+        answer: Answer
+    ) {
+        Row {
+            RadioButton(
+                selected = index == selectedButton.value,
+                modifier = Modifier.padding(start = Dp(50f)),
+                onClick = { selectedButton.value = index })
+            Text(
+                text = answer.name,
+                modifier = Modifier.padding(top = Dp(12f)),
+                color = if (selectedButton.value == index) Color.Blue else Color.Black
+            )
+        }
+    }
     @Composable
     private fun answerButton(
         questionIndex: MutableState<Int>,
         question: Question,
         selectedButton: MutableState<Int>
     ) {
-        Button(onClick = {
-            if (questionIndex.value >= QUESTIONS) {
-                return@Button
-            }
+        Button(
+            onClick = {
+                if (questionIndex.value >= QUESTIONS) {
+                    return@Button
+                }
 
-            if (question.answers[selectedButton.value].isCorrect) {
-                gameboardViewModel.quiz.value.score++
-            }
-            selectedButton.value = -1
-            questionIndex.value++
-        },
-        enabled = selectedButton.value != -1
+                if (question.answers[selectedButton.value].isCorrect) {
+                    gameboardViewModel.quiz.value.score++
+                }
+                selectedButton.value = -1
+                questionIndex.value++
+            },
+            enabled = selectedButton.value != -1,
+            modifier = Modifier.padding(start = Dp(65f))
         ) {
             Text(text = "answer")
         }
